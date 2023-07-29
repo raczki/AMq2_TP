@@ -63,8 +63,8 @@ class FeatureEngineeringPipeline(object):
         :return: The transformed DataFrame.
         :rtype: pd.DataFrame
         """
-
-        df.describe()
+        
+        # df.describe()
 
         # Convert the 'Outlet_Establishment_Year' column to represent years since establishment.
         df['Outlet_Establishment_Year'] = 2020 - df['Outlet_Establishment_Year']
