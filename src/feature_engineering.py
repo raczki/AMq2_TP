@@ -156,5 +156,5 @@ class FeatureEngineeringPipeline(object):
         self.write_prepared_data(df_transformed)
 
 if __name__ == "__main__":
-    FeatureEngineeringPipeline(input_path = './data/',
-                               output_path = './data/').run()
+    FeatureEngineeringPipeline(input_path = '../data/',
+                               output_path = '../data/').run()

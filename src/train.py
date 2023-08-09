@@ -1,11 +1,12 @@
 """
 train.py
 
-COMPLETAR DOCSTRING
+This script contains functions and classes for training a machine learning model and evaluating its performance.
 
-DESCRIPCIÓN:
-AUTOR:
-FECHA:
+DESCRIPTION: This script includes functions to save DataFrames as CSV files, evaluate model performance using various 
+metrics and visualizations, and implement a model training pipeline.
+AUTHOR: Karen Raczkowski
+DATE: 18/8/23
 """
 
 # Imports
@@ -55,7 +56,7 @@ def save_csv(dataframe_train: pd.DataFrame, dataframe_test: pd.DataFrame):
 
     return train_file, test_file
 
-def evaluate_model_performance(train_x, train_y, y_value, x_value, pred, model):
+def evaluate_model_performance(train_x, train_y, y_value, x_value, pred, model, model_path):
     """
     Evaluate the performance of a machine learning model using various metrics and visualizations.
 
@@ -75,25 +76,25 @@ def evaluate_model_performance(train_x, train_y, y_value, x_value, pred, model):
     r2_train = model.score(train_x, train_y)
     print('Model evaluation metrics:')
     print(
-        f'TRAINING: RMSE: {mse_training:.2f} - R2: {r2_train:.4f}')
+        f'Training RMSE: {mse_training:.2f} - R2: {r2_train:.4f}')
 
     mse_val = metrics.mean_squared_error(y_value, pred)
     mse_validation = mse_val**2
     r2_val = model.score(x_value, y_value)
     model_intercept = model.intercept_
-    print(f'VALIDATION: RMSE: {mse_validation:.2f} - R2: {r2_val:.4f}')
+    print(f'Validation RMSE: {mse_validation:.2f} - R2: {r2_val:.4f}')
 
     print('\nAdditional metrics:')
     
     mae_train = metrics.mean_absolute_error(train_y, model.predict(train_x))
     mae_val = metrics.mean_absolute_error(y_value, pred)
-    print(f'TRAINING: MAE: {mae_train:.2f}')
-    print(f'VALIDATION: MAE: {mae_val:.2f}')
+    print(f'Training MAE: {mae_train:.2f}')
+    print(f'Validation MAE: {mae_val:.2f}')
     
     mape_train = metrics.mean_absolute_percentage_error(train_y, model.predict(train_x))
     mape_val = metrics.mean_absolute_percentage_error(y_value, pred)
-    print(f'TRAINING: MAPE: {mape_train:.2f}%')
-    print(f'VALIDATION: MAPE: {mape_val:.2f}%')
+    print(f'Training MAPE: {mape_train:.2f}%')
+    print(f'Validation MAPE: {mape_val:.2f}%')
 
     print('\nModel coefficients:')
     
@@ -103,32 +104,37 @@ def evaluate_model_performance(train_x, train_y, y_value, x_value, pred, model):
     coef = pd.DataFrame(train_x.columns, columns=['features'])
     coef['Estimated coefficients'] = model.coef_
     print(coef, '\n')
-    coef.sort_values(by='Estimated coefficients').set_index('features').plot(
-        kind='bar', title='Importance of variables', figsize=(12, 6))
-    plt.show()
 
-    print('\nVisualizations:')
+    print('Saving visualizations...')
+
+    bar_plot = coef.sort_values(by='Estimated coefficients').set_index('features').plot(
+        kind='bar', title='Importance of variables', figsize=(12, 6))
+    bar_plot.figure.savefig(os.path.join(model_path, 'bar_plot.png'))
+    plt.close()
 
     # Residuals Plot
     residuals = y_value - pred
-    plt.figure(figsize=(10, 6))
+    residuals_plot = plt.figure(figsize=(10, 6))
     sns.residplot(x=pred, y=residuals, lowess=True, line_kws={'color': 'red'})
     plt.title('Residuals Plot')
     plt.xlabel('Predicted Values')
     plt.ylabel('Residuals')
-    plt.show()
+    residuals_plot.savefig(os.path.join(model_path, 'residuals_plot.png'))
+    plt.close()
     
     # QQ Plot
-    plt.figure(figsize=(10, 6))
+    qq_plot = plt.figure(figsize=(10, 6))
     probplot(residuals, plot=plt)
     plt.title('QQ Plot of Residuals')
-    plt.show()
-
+    qq_plot.savefig(os.path.join(model_path, 'qq_plot.png'))
+    plt.close()
+    
 class ModelTrainingPipeline(object):
 
     def __init__(self, input_path, model_path):
         self.input_path = input_path
         self.model_path = model_path
+        self.logger = logging.getLogger(__name__)
 
     def read_data(self) -> pd.DataFrame:
         """
@@ -205,7 +211,7 @@ class ModelTrainingPipeline(object):
         print(x_val)
         predicted_model = model.predict(x_val)
 
-        evaluate_model_performance(x_train, y_train, y_val, x_val, predicted_model, model)
+        evaluate_model_performance(x_train, y_train, y_val, x_val, predicted_model, model, self.model_path)
 
         return trained_model
 
@@ -245,5 +251,5 @@ class ModelTrainingPipeline(object):
 
 if __name__ == "__main__":
 
-    ModelTrainingPipeline(input_path = './data/',
-                          model_path = './model').run()
+    ModelTrainingPipeline(input_path = '../data/',
+                          model_path = '../model').run()

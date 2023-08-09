@@ -97,7 +97,7 @@ class MakePredictionPipeline(object):
         except Exception as e:
             logging.error("An error occurred while loading the model: {}".format(str(e))) 
 
-    def make_predictions(self, data: DataFrame) -> pd.DataFrame:
+    def make_predictions(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Make predictions on the provided data using the trained model.
 
@@ -113,7 +113,8 @@ class MakePredictionPipeline(object):
         """
         try:
             logging.info("Making predictions on provided data")
-            data_modified = data.drop(['Item_Identifier', 'Item_Outlet_Sales', 'Item_Outlet_Sales', 'Set'], axis=1, inplace=True)
+            columns_to_drop = ['Unnamed: 0', 'Outlet_Identifier', 'Item_Identifier', 'Item_Outlet_Sales', 'Item_Outlet_Sales', 'Set']
+            data_modified = data.drop(columns=columns_to_drop)
             new_data = self.model.predict(data_modified)
             return new_data
         except ValueError as ve:
@@ -122,7 +123,7 @@ class MakePredictionPipeline(object):
             logging.error("An error occurred while making predictions: {}".format(str(e))) 
         return pd.DataFrame()
 
-    def write_predictions(self, predicted_data: DataFrame) -> None:
+    def write_predictions(self, predicted_data: pd.DataFrame) -> None:
         """
         Write the predicted data to a CSV file.
 
@@ -157,7 +158,7 @@ class MakePredictionPipeline(object):
 
 if __name__ == "__main__":
     
-    pipeline = MakePredictionPipeline(input_path = './data/dataframe.csv',
-                                      output_path = './predict',
-                                      model_path = './model/trained_model.pkl')
+    pipeline = MakePredictionPipeline(input_path = '../data/dataframe.csv',
+                                      output_path = '../predictions',
+                                      model_path = '../model/trained_model.pkl')
     pipeline.run()  
