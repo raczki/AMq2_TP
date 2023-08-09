@@ -39,11 +39,11 @@ def save_csv(dataframe_train: pd.DataFrame, dataframe_test: pd.DataFrame):
         output_train = os.path.join(out_path, train_file)
         output_test = os.path.join(out_path, test_file)
         dataframe_train.to_csv(output_train)
-        logging.info(f"Writing dataframe train: {output_train}")
-        print('Writing dataframe train...')
+        logging.info(f"Writing train dataset: {output_train}")
+        print('Writing train dataset...')
         dataframe_test.to_csv(output_test)
-        logging.info(f"Writing dataframe test: {output_test}")
-        print('Writing dataframe test...')
+        logging.info(f"Writing test dataset: {output_test}")
+        print('Writing test dataset...')
     except IOError as e:
         logging.error(f"Error writing to file: {e}")
         print(f"Error writing to file: {e}")
@@ -75,8 +75,7 @@ def evaluate_model_performance(train_x, train_y, y_value, x_value, pred, model, 
     mse_training = mse_train**2
     r2_train = model.score(train_x, train_y)
     print('Model evaluation metrics:')
-    print(
-        f'Training RMSE: {mse_training:.2f} - R2: {r2_train:.4f}')
+    print(f'Training RMSE: {mse_training:.2f} - R2: {r2_train:.4f}')
 
     mse_val = metrics.mean_squared_error(y_value, pred)
     mse_validation = mse_val**2
