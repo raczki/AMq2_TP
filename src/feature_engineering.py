@@ -12,15 +12,33 @@ import os
 import pandas as pd
 
 class FeatureEngineeringPipeline(object):
+    """
+    A class for performing feature engineering on BigMart sales data.
+
+    This class provides methods to read data, perform data transformation, and write the prepared data to a CSV file.
+
+    Args:
+        input_path (str): The path to the directory containing the input data files.
+        output_path (str): The path to the directory where the processed data will be saved.
+
+    Attributes:
+        input_path (str): The path to the directory containing the input data files.
+        output_path (str): The path to the directory where the processed data will be saved.
+
+    Methods:
+        read_data(): Read and combine data from 'Train_BigMart.csv' and 'Test_BigMart.csv' into a DataFrame.
+        data_transformation(df: pd.DataFrame) -> pd.DataFrame: Perform data transformation on the provided DataFrame.
+        write_prepared_data(transformed_dataframe: pd.DataFrame) -> None: Write the prepared DataFrame to a CSV file.
+        run(): Execute the complete feature engineering pipeline by reading, transforming, and writing data.
+    """
 
     def __init__(self, input_path, output_path):
         """
-        Initialize the DataProcessor object.
+        Initialize the FeatureEngineeringPipeline object.
         
-        :param input_path: The path to the directory containing the input data files.
-        :type input_path: str
-        :param output_path: The path to the directory where the processed data will be saved.
-        :type output_path: str
+        Args:
+        input_path (str): The path to the directory containing the input data files.
+        output_path (str): The path to the directory where the processed data will be saved.
         """
         self.input_path = input_path
         self.output_path = output_path
@@ -29,8 +47,8 @@ class FeatureEngineeringPipeline(object):
         """
         Read and combine data from 'Train_BigMart.csv' and 'Test_BigMart.csv' into a DataFrame.
 
-        :return: The combined DataFrame with an additional 'Set' column to distinguish between train and test sets.
-        :rtype: pd.DataFrame
+        Returns:
+        pd.DataFrame: The combined DataFrame with an additional 'Set' column to distinguish between train and test sets.
         """
         try:
             train_file = 'Train_BigMart.csv'
@@ -60,10 +78,11 @@ class FeatureEngineeringPipeline(object):
         """
         Perform data transformation on the provided DataFrame.
 
-        :param df: Input DataFrame containing BigMart sales data.
-        :type df: pd.DataFrame
-        :return: Transformed DataFrame with cleaned and processed features.
-        :rtype: pd.DataFrame
+        Args:
+        df (pd.DataFrame): Input DataFrame containing BigMart sales data.
+
+        Returns:
+        pd.DataFrame: Transformed DataFrame with cleaned and processed features.
         """
         # df.describe()
 
@@ -115,13 +134,13 @@ class FeatureEngineeringPipeline(object):
         """
         Write the prepared DataFrame to a CSV file.
 
-        :param transformed_dataframe: The DataFrame that has been prepared and needs to be saved.
-        :type transformed_dataframe: pd.DataFrame
+        Args:
+        transformed_dataframe (pd.DataFrame): The DataFrame that has been prepared and needs to be saved.
         """
         try:
             name_file = 'dataframe.csv'
             output_file = os.path.join(self.output_path, name_file)
-            transformed_dataframe.to_csv(output_file, index=False) # Set index=False to exclude index column from CSV.
+            transformed_dataframe.to_csv(output_file)
         except (IOError, OSError, PermissionError, FileNotFoundError) as error: 
             print("An exception ocurred: ", type(error).__name__,"-", error) 
             print("Error writing to file")
@@ -129,6 +148,9 @@ class FeatureEngineeringPipeline(object):
             print("An unexpected error occurred:", type(error).__name__, "-", error)
 
     def run(self):
+        """
+        Execute the complete feature engineering pipeline by reading, transforming, and writing data.
+        """
         df = self.read_data()
         df_transformed = self.data_transformation(df)
         self.write_prepared_data(df_transformed)

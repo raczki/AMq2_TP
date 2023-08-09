@@ -1,11 +1,11 @@
 """
 predict.py
 
-COMPLETAR DOCSTRING
+This script defines a pipeline for making predictions using a trained machine learning model. It loads input data, loads a
+trained model, makes predictions on the input data, and writes the predictions to a CSV file.
 
-DESCRIPCIÓN:
-AUTOR:
-FECHA:
+AUTHOR: Karen Raczkowski
+DATE: 18/8/23
 """
 
 # Imports
@@ -14,12 +14,29 @@ import joblib
 import logging
 
 class MakePredictionPipeline(object):
-    
+    """
+    A pipeline for making predictions using a trained machine learning model.
+
+    Attributes:
+        input_path (str): The path to the input data file.
+        output_path (str): The path where the predicted data will be saved.
+        model_path (str): The path to the trained model file.
+    """
+
     def __init__(self, input_path, output_path, model_path: str = None):
+        """
+        Initialize the MakePredictionPipeline object.
+
+        :param input_path: The path to the input data file.
+        :type input_path: str
+        :param output_path: The path to save the predicted data.
+        :type output_path: str
+        :param model_path: The path to the trained model file.
+        :type model_path: str
+        """
         self.input_path = input_path
         self.output_path = output_path
         self.model_path = model_path
-                
                 
     def load_data(self) -> pd.DataFrame:
         """
@@ -37,8 +54,23 @@ class MakePredictionPipeline(object):
         except FileNotFoundError:
             logging.error("File not found: {}".format(self.input_path))
             return pd.DataFrame()
+        except UnicodeDecodeError as ude:
+            logging.error("Unicode decoding error: {}".format(str(ude)))
+            return pd.DataFrame()
+        except pd.errors.EmptyDataError:
+            logging.warning("Empty CSV file: {}".format(self.input_path))
+            return pd.DataFrame()
+        except pd.errors.ParserError as pe:
+            logging.error("CSV parsing error: {}".format(str(pe)))
+            return pd.DataFrame()
+        except PermissionError as perm_error:
+            logging.error("Permission error: {}".format(str(perm_error)))
+            return pd.DataFrame()
+        except OSError as os_error:
+            logging.error("OS error: {}".format(str(os_error)))
+            return pd.DataFrame()
         except Exception as e:
-            logging.error("An error occurred while loading data: {}".format(str(e)))  # noqa E501
+            logging.error("An error occurred while loading data: {}".format(str(e)))
             return pd.DataFrame()
         
     def load_model(self) -> None:
@@ -53,13 +85,17 @@ class MakePredictionPipeline(object):
         """
         try:
             logging.info("Loading model from: {}".format(self.model_path))
-            self.model = joblib.load(self.model_path)  # library  # noqa E501
+            self.model = joblib.load(self.model_path)
         except FileNotFoundError:
             logging.error("File not found: {}".format(self.model_path))
+        except IsADirectoryError:
+            logging.error("The provided model path is a directory: {}".format(self.model_path))
+        except PermissionError as perm_error:
+            logging.error("Permission error: {}".format(str(perm_error)))
+        except OSError as os_error:
+            logging.error("OS error: {}".format(str(os_error)))
         except Exception as e:
-            logging.error("An error occurred while loading the model: {}".format(str(e)))  # noqa E501
-
-        return None
+            logging.error("An error occurred while loading the model: {}".format(str(e))) 
 
     def make_predictions(self, data: DataFrame) -> pd.DataFrame:
         """
@@ -80,9 +116,11 @@ class MakePredictionPipeline(object):
             data_modified = data.drop(['Item_Identifier', 'Item_Outlet_Sales', 'Item_Outlet_Sales', 'Set'], axis=1, inplace=True)
             new_data = self.model.predict(data_modified)
             return new_data
+        except ValueError as ve:
+            logging.error("ValueError occurred while making predictions: {}".format(str(ve)))
         except Exception as e:
-            logging.error("An error occurred while making predictions: {}".format(str(e)))  # noqa E501
-            return pd.DataFrame()
+            logging.error("An error occurred while making predictions: {}".format(str(e))) 
+        return pd.DataFrame()
 
     def write_predictions(self, predicted_data: DataFrame) -> None:
         """
@@ -102,11 +140,12 @@ class MakePredictionPipeline(object):
                 columns=['Prediction']
             )
             df_predicted_data.to_csv(self.output_path + '/predictions.csv')
+        except FileNotFoundError:
+            logging.error("Output directory not found: {}".format(self.output_path))
+        except PermissionError as perm_error:
+            logging.error("Permission error: {}".format(str(perm_error)))
         except Exception as e:
-            logging.error("An error occurred while writing predictions: {}".format(str(e)))  # noqa E501
-
-        return None
-
+            logging.error("An error occurred while writing predictions: {}".format(str(e)))
 
     def run(self):
 
