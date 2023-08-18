@@ -21,6 +21,7 @@ from sklearn.model_selection import train_test_split
 from hyperopt import fmin, tpe, hp
 from hyperopt.pyll import scope
 
+
 def pre_processing(pandas_df: pd.DataFrame):
     """
     Preprocesses the given DataFrame by dropping unnecessary 
@@ -40,6 +41,7 @@ def pre_processing(pandas_df: pd.DataFrame):
 
     return df_train, df_test
 
+
 class HyperParametersPipeline:
     """
     A pipeline for hyperparameter tuning using the Hyperopt library.
@@ -48,6 +50,7 @@ class HyperParametersPipeline:
         input_path (str): The path to the input data file.
         output_path (str): The path where outputs will be saved.
     """
+
     def __init__(self, input_path, output_path: str = None):
         """
         Initialize the HyperParametersPipeline object.
@@ -85,7 +88,7 @@ class HyperParametersPipeline:
         Prepare the dataset for model training.
 
         Args:
-            df (pd.DataFrame): The DataFrame containing the dataset.
+            data_frame (pd.DataFrame): The DataFrame containing the dataset.
 
         Returns:
             np.array, np.array: Arrays of features and target variable for training.
@@ -155,7 +158,7 @@ class HyperParametersPipeline:
         Returns:
             float: Negative root mean squared error score.
         """
-        return self.return_score(params,self.x_train, self.y_train)
+        return self.return_score(params, self.x_train, self.y_train)
 
     def run(self):
         """
@@ -169,11 +172,15 @@ class HyperParametersPipeline:
 
         # Define the initial search space with broader ranges
         space = {
-            'lambda': hp.uniform('lambda', 0.1, 20.0), # L2 regularization term (reg_lambda)
-            'alpha': hp.uniform('alpha', 0.1, 20.0), # L1 regularization term (reg_alpha)
-            'learning_rate': hp.uniform('learning_rate', 0.01, 0.5), 
-            'colsample_bytree': hp.uniform('colsample_bytree', 0.1, 1.0), # Subsampling ratio
-            'n_estimators': scope.int(hp.quniform('n_estimators', 50, 300, 1)) # Boosting rounds
+            # L2 regularization term (reg_lambda)
+            'lambda': hp.uniform('lambda', 0.1, 20.0),
+            # L1 regularization term (reg_alpha)
+            'alpha': hp.uniform('alpha', 0.1, 20.0),
+            'learning_rate': hp.uniform('learning_rate', 0.01, 0.5),
+            # Subsampling ratio
+            'colsample_bytree': hp.uniform('colsample_bytree', 0.1, 1.0),
+            # Boosting rounds
+            'n_estimators': scope.int(hp.quniform('n_estimators', 50, 300, 1))
         }
 
         # Max_evals should be adjusted based on the exploration strategy
@@ -182,12 +189,14 @@ class HyperParametersPipeline:
             fn=partial_objective, space=space, algo=tpe.suggest, max_evals=200)
 
         if self.output_path:
-            output_file = os.path.join(self.output_path, 'best_hyperparameters.txt')
+            output_file = os.path.join(
+                self.output_path, 'best_hyperparameters.txt')
             with open(output_file, 'w', encoding='utf-8') as file:
                 file.write(str(best_hyperparams_result))
 
         print("Best hyperparameters:", best_hyperparams_result)
         return best_hyperparams_result
+
 
 if __name__ == "__main__":
     pipeline = HyperParametersPipeline(
