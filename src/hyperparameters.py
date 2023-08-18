@@ -1,8 +1,10 @@
 """
 hyperparameters.py
 
-DESCRIPTION: This script defines a pipeline for hyperparameter tuning using the Hyperopt library. It loads a dataset, preprocesses it,
-trains an XGBoost regression model, and performs hyperparameter tuning to find the best set of hyperparameters.
+DESCRIPTION: This script defines a pipeline for hyperparameter tuning 
+using the Hyperopt library. It loads a dataset, preprocesses it,
+trains an XGBoost regression model, and performs hyperparameter 
+tuning to find the best set of hyperparameters.
 AUTHOR: Karen Raczkowski
 DATE: 18/8/23
 """
@@ -10,6 +12,7 @@ DATE: 18/8/23
 # Imports
 import logging
 import os
+from functools import partial
 import xgboost as xgboost_regressor
 import pandas as pd
 import numpy as np
@@ -20,7 +23,8 @@ from hyperopt.pyll import scope
 
 def pre_processing(pandas_df: pd.DataFrame):
     """
-    Preprocesses the given DataFrame by dropping unnecessary columns and splitting into train and test sets.
+    Preprocesses the given DataFrame by dropping unnecessary 
+    columns and splitting into train and test sets.
 
     Args:
         pandas_df (pd.DataFrame): The DataFrame containing raw data.
@@ -36,7 +40,7 @@ def pre_processing(pandas_df: pd.DataFrame):
 
     return df_train, df_test
 
-class HyperParametersPipeline(object):
+class HyperParametersPipeline:
     """
     A pipeline for hyperparameter tuning using the Hyperopt library.
 
@@ -54,6 +58,8 @@ class HyperParametersPipeline(object):
         """
         self.input_path = input_path
         self.output_path = output_path
+        self.x_train = None
+        self.y_train = None
 
     def load_data(self) -> pd.DataFrame:
         """
@@ -74,7 +80,7 @@ class HyperParametersPipeline(object):
 
         return pandas_df
 
-    def model_to_train(self, df: pd.DataFrame):
+    def data_prep(self, data_frame: pd.DataFrame):
         """
         Prepare the dataset for model training.
 
@@ -85,10 +91,7 @@ class HyperParametersPipeline(object):
             np.array, np.array: Arrays of features and target variable for training.
         """
 
-        global x_train
-        global y_train
-
-        df_train, df_test = pre_processing(pandas_df=df)
+        df_train, df_test = pre_processing(pandas_df=data_frame)
 
         # Deleting columns without data
         df_train.drop(['Unnamed: 0', 'Set'], axis=1, inplace=True)
@@ -98,10 +101,11 @@ class HyperParametersPipeline(object):
         seed = 28
 
         # Splitting of  the dataset in training and validation sets
-        X = df_train.drop(columns='Item_Outlet_Sales')
-        y = df_train['Item_Outlet_Sales']
-        x_train, _, y_train, _ = train_test_split(X, y, test_size=0.3, random_state=seed)
-        return x_train, y_train
+        features = df_train.drop(columns='Item_Outlet_Sales')
+        target = df_train['Item_Outlet_Sales']
+        self.x_train, _, self.y_train, _ = train_test_split(
+            features, target, test_size=0.3, random_state=seed)
+        return self.x_train, self.y_train
 
     def train_model(self, x_train, y_train):
         """
@@ -119,12 +123,14 @@ class HyperParametersPipeline(object):
             objective='reg:linear', n_estimators=10, random_state=seed)
         # Train the model
         score_model = cross_val_score(
-            model_trained, x_train, y_train, scoring='neg_root_mean_squared_error', n_jobs=-1, cv=10)
+            model_trained, x_train, y_train,
+            scoring='neg_root_mean_squared_error', n_jobs=-1, cv=10)
+
         print('Score model', score_model)
         print(np.mean(score_model), np.std(score_model))
         return score_model
 
-    def return_score(self, params):
+    def return_score(self, params, x_train, y_train):
         """
         Return the negative root mean squared error score using given hyperparameters.
 
@@ -149,7 +155,7 @@ class HyperParametersPipeline(object):
         Returns:
             float: Negative root mean squared error score.
         """
-        return self.return_score(params)
+        return self.return_score(params,self.x_train, self.y_train)
 
     def run(self):
         """
@@ -159,26 +165,34 @@ class HyperParametersPipeline(object):
             dict: Dictionary of best hyperparameters found.
         """
         data_frame = self.load_data()
-        x_trained, y_trained = self.model_to_train(data_frame)
-        
+        self.data_prep(data_frame)
+
         # Define the initial search space with broader ranges
         space = {
             'lambda': hp.uniform('lambda', 0.1, 20.0), # L2 regularization term (reg_lambda)
             'alpha': hp.uniform('alpha', 0.1, 20.0), # L1 regularization term (reg_alpha)
             'learning_rate': hp.uniform('learning_rate', 0.01, 0.5), 
-            'colsample_bytree': hp.uniform('colsample_bytree', 0.1, 1.0), # Feature subsampling ratio
-            'n_estimators': scope.int(hp.quniform('n_estimators', 50, 300, 1)) # Number of boosting rounds
+            'colsample_bytree': hp.uniform('colsample_bytree', 0.1, 1.0), # Subsampling ratio
+            'n_estimators': scope.int(hp.quniform('n_estimators', 50, 300, 1)) # Boosting rounds
         }
 
         # Max_evals should be adjusted based on the exploration strategy
-        best_hyperparams = fmin(fn=self.objective, space=space, algo=tpe.suggest, max_evals=200) 
-        print("Best hyperparameters:", best_hyperparams)
-        return best_hyperparams
+        partial_objective = partial(self.objective)
+        best_hyperparams_result = fmin(
+            fn=partial_objective, space=space, algo=tpe.suggest, max_evals=200)
+
+        if self.output_path:
+            output_file = os.path.join(self.output_path, 'best_hyperparameters.txt')
+            with open(output_file, 'w', encoding='utf-8') as file:
+                file.write(str(best_hyperparams_result))
+
+        print("Best hyperparameters:", best_hyperparams_result)
+        return best_hyperparams_result
 
 if __name__ == "__main__":
     pipeline = HyperParametersPipeline(
         input_path='../data/',
-        output_path='../hp')
+        output_path='../hp/')
 
     # Retrieve the best hyperparameters found by Hyperopt.
     best_hyperparams = pipeline.run()

@@ -69,7 +69,6 @@ class FeatureEngineeringPipeline(object):
         
         except Exception as error:
             print("An unexpected error occurred:", type(error).__name__, "-", error)
-            print("Please contact support for assistance.")
             return None
         
         return pandas_df
