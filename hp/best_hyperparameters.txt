@@ -1,1 +1,1 @@
-{'alpha': 10.535462107363145, 'colsample_bytree': 0.6864367289628326, 'lambda': 6.540839273838651, 'learning_rate': 0.05994757980765012, 'n_estimators': 84.0}
+{'alpha': 19.957035255648464, 'colsample_bytree': 0.5417774152111975, 'lambda': 12.506176369096865, 'learning_rate': 0.02456317021927977, 'n_estimators': 263.0}
